@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OutcomePulse — Sistem Prestasi Berasaskan Hasil</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .fade-in {
+            animation: fadeIn 0.25s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Top Demo / Firebase Control Bar -->
+    <div class="bg-slate-900 text-white px-4 py-2 text-xs border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 font-semibold text-emerald-400">
+                    <span id="fb-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="fb-status-text">Menyambung ke Firebase...</span>
+                </span>
+                <span class="hidden sm:inline text-slate-400">|</span>
+                <span class="hidden sm:inline text-slate-300">Mod Demo Pantas (Tukar Peranan Secara Langsung):</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <span class="text-slate-400 hidden md:inline">Peranan Aktif:</span>
+                <div class="inline-flex rounded-lg bg-slate-800 p-0.5 border border-slate-700" role="group">
+                    <button onclick="switchDemoRole('user')" id="role-btn-user" class="px-2.5 py-1 rounded-md font-medium transition-all text-slate-300 hover:text-white">
+                        1. User (Staf)
+                    </button>
+                    <button onclick="switchDemoRole('admin')" id="role-btn-admin" class="px-2.5 py-1 rounded-md font-medium transition-all text-slate-300 hover:text-white">
+                        2. Admin (Pengurus)
+                    </button>
+                    <button onclick="switchDemoRole('super_admin')" id="role-btn-super_admin" class="px-2.5 py-1 rounded-md font-medium transition-all text-slate-300 hover:text-white">
+                        3. Super Admin
+                    </button>
+                </div>
+                <button onclick="openFirebaseConfigModal()" title="Konfigurasi Firebase Sendiri" class="p-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                    <i data-lucide="database" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="flex min-h-[calc(100vh-41px)]">
+        <!-- Mobile Sidebar Backdrop -->
+        <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 w-68 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col w-64 shrink-0">
+            <!-- Brand Logo -->
+            <div class="h-16 flex items-center justify-between px-5 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
+                        <i data-lucide="target" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="font-heading font-bold text-lg tracking-tight text-slate-900 block leading-none">Outcome<span class="text-indigo-600">Pulse</span></span>
+                        <span class="text-[10px] font-medium text-slate-400 tracking-wider uppercase">Performance OS</span>
+                    </div>
+                </div>
+                <button onclick="toggleMobileSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Active User Card -->
+            <div class="p-4 border-b border-slate-100 bg-slate-50/60">
+                <div class="flex items-center gap-3">
+                    <div id="sidebar-avatar" class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm shrink-0 border border-indigo-200">
+                        AA
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p id="sidebar-user-name" class="text-sm font-semibold text-slate-900 truncate">Ahmad Albab</p>
+                        <p id="sidebar-user-dept" class="text-xs text-slate-500 truncate">Pemasaran Digital</p>
+                    </div>
+                </div>
+                <div class="mt-2.5 flex items-center justify-between">
+                    <span id="sidebar-role-badge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        <i data-lucide="shield" class="w-3 h-3"></i> User (Penyumbang)
+                    </span>
+                    <span id="sidebar-cycle-badge" class="text-[11px] font-medium text-slate-500">Q4 2026</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Role-Based Menu -->
+            <nav id="sidebar-nav" class="flex-1 overflow-y-auto p-3 space-y-1">
+                <!-- Populated dynamically via JS based on RBAC -->
+            </nav>
+
+            <!-- Bottom Formula Summary Card -->
+            <div class="p-4 border-t border-slate-100">
+                <div class="rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-3.5 text-white">
+                    <div class="flex items-center justify-between text-xs text-slate-300 mb-1.5">
+                        <span class="font-medium">Pemberat Skor Aktif</span>
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-center text-[11px]">
+                        <div class="bg-white/10 rounded py-1">
+                            <span class="block text-slate-400 text-[9px]">HASIL</span>
+                            <span id="weight-disp-w1" class="font-bold text-emerald-400">60%</span>
+                        </div>
+                        <div class="bg-white/10 rounded py-1">
+                            <span class="block text-slate-400 text-[9px]">KUALITI</span>
+                            <span id="weight-disp-w2" class="font-bold text-indigo-300">25%</span>
+                        </div>
+                        <div class="bg-white/10 rounded py-1">
+                            <span class="block text-slate-400 text-[9px]">KOLAB</span>
+                            <span id="weight-disp-w3" class="font-bold text-amber-300">15%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="flex-1 flex flex-col min-w-0">
+            <!-- Header -->
+            <header class="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-[41px] z-20">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h1 id="page-title" class="font-heading font-bold text-lg sm:text-xl text-slate-900">Papan Pemuka Utama</h1>
+                        <p id="page-subtitle" class="text-xs text-slate-500 hidden sm:block">Ringkasan prestasi berasaskan hasil & impak semasa</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2.5">
+                    <!-- User Persona Selector within the active role -->
+                    <div class="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <select id="persona-selector" onchange="switchSpecificUser(this.value)" class="bg-transparent text-xs font-medium text-slate-700 focus:outline-none cursor-pointer">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <button onclick="openNewOutcomeModal()" class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-lg shadow-sm shadow-indigo-200 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambah Hasil (Outcome)</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic Content Area -->
+            <main id="main-content" class="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
+                <!-- Views rendered dynamically here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal 1: Tambah Hasil Baru (New Outcome) -->
+    <div id="modal-new-outcome" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                        <i data-lucide="target" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="font-heading font-bold text-slate-900">Cipta Sasaran Hasil (Outcome)</h3>
+                </div>
+                <button onclick="closeModal('modal-new-outcome')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-new-outcome" onsubmit="handleCreateOutcome(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Penjajaran Matlamat Organisasi (North Star) *</label>
+                    <select id="out-org-goal" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Pernyataan Hasil Utama (Outcome Title) *</label>
+                    <input type="text" id="out-title" required placeholder="cth: Menjana 500 Prospek Berkualiti melalui Kempen Organik" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan</label>
+                        <input type="text" id="out-dept" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Metrik *</label>
+                        <input type="text" id="out-unit" required placeholder="cth: Prospek, %, RM, Projek" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nilai Asas (Baseline)</label>
+                        <input type="number" step="any" id="out-baseline" value="0" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Sasaran (Target) *</label>
+                        <input type="number" step="any" id="out-target" required placeholder="100" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Pemberat (%)</label>
+                        <input type="number" min="5" max="100" id="out-weight" value="30" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>
+                    <span>Sasaran yang dicipta oleh <strong>User</strong> akan dihantar kepada <strong>Admin</strong> untuk kelulusan. Sasaran oleh Admin/Super Admin diluluskan secara automatik.</span>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-new-outcome')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">Simpan ke Firebase</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Kemas Kini Kemajuan & Bukti Hasil (Check-In) -->
+    <div id="modal-checkin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-heading font-bold text-slate-900 text-sm sm:text-base">Log Check-In & Bukti Hasil</h3>
+                        <p id="chk-outcome-title" class="text-xs text-slate-500 truncate max-w-xs"></p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-checkin')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="form-checkin" onsubmit="handleCreateCheckIn(event)" class="p-6 space-y-4">
+                <input type="hidden" id="chk-outcome-id">
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>
+                        <span class="text-[11px] text-slate-500 block">Kemajuan Semasa</span>
+                        <span id="chk-current-disp" class="font-bold text-slate-900 text-sm">0 / 100</span>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-indigo-700 mb-1">Nilai Terkini Baru *</label>
+                        <input type="number" step="any" id="chk-new-value" required class="w-full rounded-lg border border-indigo-300 bg-white px-2.5 py-1.5 text-sm font-semibold text-indigo-900 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">1. Apa pencapaian/impak yang berjaya dihasilkan? *</label>
+                    <textarea id="chk-accomplishment" rows="2" required placeholder="Nyatakan hasil konkrit yang dicapai..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">2. Halangan atau risiko (jika ada)</label>
+                    <input type="text" id="chk-blocker" placeholder="cth: Tiada halangan / Menunggu kelulusan vendor" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">3. Pautan / Rujukan Bukti Kerja (Proof of Outcome) *</label>
+                    <input type="text" id="chk-evidence" required placeholder="cth: https://docs.google.com/laporan-q4 atau ID Dokumen" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-checkin')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">Hantar Check-In & Bukti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Pengesahan & Penilaian Kualiti oleh Admin -->
+    <div id="modal-verify-outcome" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-heading font-bold text-slate-900">Pengesahan & Penilaian Kualiti</h3>
+                <button onclick="closeModal('modal-verify-outcome')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleAdminVerifyOutcome(event)" class="p-6 space-y-4">
+                <input type="hidden" id="verify-outcome-id">
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <p id="verify-outcome-title" class="font-semibold text-sm text-slate-900"></p>
+                    <p id="verify-outcome-owner" class="text-xs text-slate-500 mt-0.5"></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Status Kelulusan</label>
+                    <select id="verify-status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                        <option value="approved">Diluluskan (Approved)</option>
+                        <option value="revision_needed">Perlu Semakan Semula (Revision Needed)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Skor Kualiti & Impak (1.0 - 5.0 Bintang)</label>
+                    <input type="number" step="0.1" min="1" max="5" id="verify-quality" value="4.5" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold">
+                    <p class="text-[11px] text-slate-500 mt-1">Skor ini menyumbang kepada pemberat Kualiti (<span id="verify-w2-hint">25%</span>) dalam formula keseluruhan.</p>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-verify-outcome')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">Sahkan & Simpan Skor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Konfigurasi Firebase -->
+    <div id="modal-firebase-config" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+                    <h3 class="font-heading font-bold text-sm sm:text-base">Sambungan Pangkalan Data Firebase</h3>
+                </div>
+                <button onclick="closeModal('modal-firebase-config')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Sistem ini menyokong <strong>Cloud Firestore</strong> secara masa nyata. Secara lalai, ia menggunakan pangkalan data awan terbina dalam atau storan tempatan bersepadu jika luar talian. Anda juga boleh menampal objek konfigurasi projek Firebase anda sendiri di bawah:
+                </p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Firebase Config JSON (apiKey, authDomain, projectId, dll.)</label>
+                    <textarea id="custom-firebase-json" rows="5" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}' class="w-full font-mono text-xs rounded-lg border border-slate-300 p-3 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" onclick="resetDemoData()" class="text-xs font-semibold text-rose-600 hover:text-rose-700 underline">
+                        Set Semula Data Contoh (Seed Reset)
+                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('modal-firebase-config')" class="px-3.5 py-2 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100">Tutup</button>
+                        <button type="button" onclick="saveCustomFirebaseConfig()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">Simpan & Sambung</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Firebase SDK v11 (Modular) & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc,
+            onSnapshot, query, orderBy, getDocs, serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        // =========================================================================
+        // 1. KEADAAN GLOBAL APLIKASI (STATE) & KONFIGURASI FIREBASE
+        // =========================================================================
+        const APP_NAMESPACE = "outcomepulse_my_v1";
+        let db = null;
+        let auth = null;
+        let isFirebaseLive = false;
+        let currentTab = 'dashboard';
+        let activeRole = 'user'; // 'user' | 'admin' | 'super_admin'
+        let activeUserId = 'user_101';
+
+        // Data State (Disegerakkan secara masa nyata dengan Firestore atau Fallback Storage)
+        let state = {
+            users: [],
+            orgGoals: [],
+            outcomes: [],
+            checkIns: [],
+            recognitions: [],
+            auditLogs: [],
+            settings: {
+                cycle: 'Suku Tahun 4 (Q4 2026)',
+                w1: 60, // Pencapaian Hasil
+                w2: 25, // Kualiti & Impak
+                w3: 15  // Kolaborasi
+            }
+        };
+
+        // Data Permulaan Realistik (Pre-seed jika Firestore kosong)
+        const SEED_DATA = {
+            settings: {
+                cycle: 'Suku Tahun 4 (Q4 2026)',
+                w1: 60,
+                w2: 25,
+                w3: 15
+            },
+            users: [
+                { uid: 'user_101', name: 'Ahmad Albab', email: 'ahmad@outcomepulse.my', role: 'user', department: 'Pemasaran Digital', collaborationScore: 88 },
+                { uid: 'user_102', name: 'Nurul Izzah', email: 'nurul@outcomepulse.my', role: 'user', department: 'Pembangunan Produk', collaborationScore: 94 },
+                { uid: 'user_103', name: 'Kavita Devi', email: 'kavita@outcomepulse.my', role: 'user', department: 'Operasi & Khidmat Pelanggan', collaborationScore: 85 },
+                { uid: 'admin_01', name: 'Puan Siti Aminah', email: 'siti.aminah@outcomepulse.my', role: 'admin', department: 'Pemasaran Digital', collaborationScore: 92 },
+                { uid: 'admin_02', name: 'Encik Hafiz Zulkifli', email: 'hafiz@outcomepulse.my', role: 'admin', department: 'Pembangunan Produk', collaborationScore: 90 },
+                { uid: 'super_01', name: 'Dato\' Azman Hakim', email: 'azman.ceo@outcomepulse.my', role: 'super_admin', department: 'Pengurusan Tertinggi', collaborationScore: 96 }
+            ],
+            orgGoals: [
+                { goalId: 'org_01', title: 'Meningkatkan Hasil Pendapatan Tahunan Organisasi Sebanyak 25%', cycle: 'Q4 2026', owner: 'Dato\' Azman Hakim' },
+                { goalId: 'org_02', title: 'Mencapai Skor Kepuasan Pelanggan (CSAT) Melebihi 92% Melalui Automasi', cycle: 'Q4 2026', owner: 'Dato\' Azman Hakim' }
+            ],
+            outcomes: [
+                {
+                    outcomeId: 'out_01',
+                    userId: 'user_101',
+                    department: 'Pemasaran Digital',
+                    alignedOrgGoalId: 'org_01',
+                    title: 'Menjana 500 Prospek Berkualiti (MQL) melalui Kempen Kandungan Organik',
+                    baselineValue: 100,
+                    currentValue: 420,
+                    targetValue: 500,
+                    unit: 'Prospek',
+                    weightage: 50,
+                    approvalStatus: 'approved',
+                    qualityRating: 4.6
+                },
+                {
+                    outcomeId: 'out_02',
+                    userId: 'user_101',
+                    department: 'Pemasaran Digital',
+                    alignedOrgGoalId: 'org_01',
+                    title: 'Mengurangkan Kos Pemerolehan Pelanggan (CAC) daripada RM180 kepada RM120',
+                    baselineValue: 180,
+                    currentValue: 135,
+                    targetValue: 120,
+                    unit: 'RM',
+                    isLowerBetter: true,
+                    weightage: 50,
+                    approvalStatus: 'approved',
+                    qualityRating: 4.4
+                },
+                {
+                    outcomeId: 'out_03',
+                    userId: 'user_102',
+                    department: 'Pembangunan Produk',
+                    alignedOrgGoalId: 'org_02',
+                    title: 'Melancarkan Modul Pembayaran Automatik dengan Kadar Ralat < 0.5%',
+                    baselineValue: 0,
+                    currentValue: 85,
+                    targetValue: 100,
+                    unit: '% Siap',
+                    weightage: 60,
+                    approvalStatus: 'approved',
+                    qualityRating: 4.8
+                },
+                {
+                    outcomeId: 'out_04',
+                    userId: 'user_103',
+                    department: 'Operasi & Khidmat Pelanggan',
+                    alignedOrgGoalId: 'org_02',
+                    title: 'Memendekkan Masa Penyelesaian Tiket Sokongan daripada 24 Jam kepada 4 Jam',
+                    baselineValue: 24,
+                    currentValue: 9,
+                    targetValue: 4,
+                    unit: 'Jam',
+                    isLowerBetter: true,
+                    weightage: 50,
+                    approvalStatus: 'pending',
+                    qualityRating: 4.0
+                }
+            ],
+            checkIns: [
+                {
+                    checkinId: 'chk_01',
+                    outcomeId: 'out_01',
+                    userId: 'user_101',
+                    userName: 'Ahmad Albab',
+                    outcomeTitle: 'Menjana 500 Prospek Berkualiti (MQL)',
+                    newValue: 420,
+                    unit: 'Prospek',
+                    accomplishmentNote: 'Berjaya melancarkan 4 siri webinar industri dan menyumbang 140 prospek baharu minggu ini.',
+                    blockerNote: 'Tiada halangan utama.',
+                    evidenceUrl: 'https://analytics.syarikat.my/laporan-mql-nov2026',
+                    verified: true,
+                    timestamp: '2 jam lalu'
+                },
+                {
+                    checkinId: 'chk_02',
+                    outcomeId: 'out_03',
+                    userId: 'user_102',
+                    userName: 'Nurul Izzah',
+                    outcomeTitle: 'Melancarkan Modul Pembayaran Automatik',
+                    newValue: 85,
+                    unit: '% Siap',
+                    accomplishmentNote: 'Ujian integrasi FPX & DuitNow selesai 100% di persekitaran staging.',
+                    blockerNote: 'Menunggu pengesahan keselamatan akhir daripada pasukan audit.',
+                    evidenceUrl: 'https://github.com/syarikat/payment-gateway/pull/412',
+                    verified: true,
+                    timestamp: 'Semalam'
+                }
+            ],
+            recognitions: [
+                {
+                    recId: 'rec_01',
+                    fromName: 'Puan Siti Aminah',
+                    toUserId: 'user_101',
+                    toName: 'Ahmad Albab',
+                    badge: 'Impak Tinggi',
+                    message: 'Strategi kempen organik Q4 berjaya melebihi unjuran prospek bulanan dengan kos minimum!'
+                },
+                {
+                    recId: 'rec_02',
+                    fromName: 'Ahmad Albab',
+                    toUserId: 'user_102',
+                    toName: 'Nurul Izzah',
+                    badge: 'Penyelesai Masalah',
+                    message: 'Terima kasih membantu menyambungkan API borang pendaftaran terus ke sistem CRM dengan pantas.'
+                }
+            ],
+            auditLogs: [
+                { logId: 'log_01', actor: 'Dato\' Azman Hakim (Super Admin)', action: 'Menetapkan pemberat skor global: Hasil 60%, Kualiti 25%, Kolaborasi 15%', time: 'Hari ini, 09:00 PG' },
+                { logId: 'log_02', actor: 'Puan Siti Aminah (Admin)', action: 'Meluluskan sasaran MQL Q4 untuk Ahmad Albab dengan skor kualiti 4.6/5.0', time: 'Semalam, 04:15 PTG' }
+            ]
+        };
+
+        // =========================================================================
+        // 2. INISIALISASI FIREBASE (FIRESTORE & AUTH)
+        // =========================================================================
+        async function initFirebaseSystem() {
+            const statusDot = document.getElementById('fb-status-dot');
+            const statusText = document.getElementById('fb-status-text');
+
+            // Semak jika pengguna menyimpan konfigurasi Firebase tersuai atau guna persekitaran sedia ada
+            let firebaseConfig = null;
+            const savedCustomConfig = localStorage.getItem('outcomepulse_custom_fb_config');
+            if (savedCustomConfig) {
+                try {
+                    firebaseConfig = JSON.parse(savedCustomConfig);
+                } catch (e) {
+                    console.warn("Konfigurasi Firebase tersuai tidak sah.");
+                }
+            } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                try {
+                    firebaseConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+                } catch (e) {}
+            }
+
+            if (firebaseConfig && firebaseConfig.apiKey) {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    await signInAnonymously(auth);
+                    isFirebaseLive = true;
+                    statusDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    statusText.textContent = `Firebase Firestore Aktif (${firebaseConfig.projectId || 'Cloud'})`;
+
+                    await seedIfFirestoreEmpty();
+                    attachRealtimeListeners();
+                    return;
+                } catch (err) {
+                    console.error("Ralat sambungan Firebase:", err);
+                }
+            }
+
+            // Fallback: Mod Simulasi Firestore Berterusan (LocalStorage Sync) jika tiada kunci API awan
+            isFirebaseLive = false;
+            statusDot.className = "w-2 h-2 rounded-full bg-sky-400";
+            statusText.textContent = "Mod Firestore Tempatan (Klik ikon DB untuk sambung Firebase Cloud)";
+            loadLocalFallbackState();
+            renderAll();
+        }
+
+        function loadLocalFallbackState() {
+            const raw = localStorage.getItem(APP_NAMESPACE + '_db');
+            if (raw) {
+                state = JSON.parse(raw);
+            } else {
+                state = JSON.parse(JSON.stringify(SEED_DATA));
+                saveLocalFallbackState();
+            }
+        }
+
+        function saveLocalFallbackState() {
+            localStorage.setItem(APP_NAMESPACE + '_db', JSON.stringify(state));
+        }
+
+        async function seedIfFirestoreEmpty() {
+            if (!db) return;
+            const usersSnap = await getDocs(collection(db, `${APP_NAMESPACE}_users`));
+            if (usersSnap.empty) {
+                // Muat naik data permulaan ke koleksi Firestore
+                await setDoc(doc(db, `${APP_NAMESPACE}_settings`, 'global_config'), SEED_DATA.settings);
+                for (const u of SEED_DATA.users) {
+                    await setDoc(doc(db, `${APP_NAMESPACE}_users`, u.uid), u);
+                }
+                for (const g of SEED_DATA.orgGoals) {
+                    await setDoc(doc(db, `${APP_NAMESPACE}_org_goals`, g.goalId), g);
+                }
+                for (const o of SEED_DATA.outcomes) {
+                    await setDoc(doc(db, `${APP_NAMESPACE}_outcomes`, o.outcomeId), o);
+                }
+                for (const c of SEED_DATA.checkIns) {
+                    await setDoc(doc(db, `${APP_NAMESPACE}_check_ins`, c.checkinId), c);
+                }
+                for (const r of SEED_DATA.recognitions) {
+                    await setDoc(doc(db, `${APP_NAMESPACE}_recognitions`, r.recId), r);
+                }
+                for (const l of SEED_DATA.auditLogs) {
+                    await setDoc(doc(db, `${APP_NAMESPACE}_audit_logs`, l.logId), l);
+                }
+                showToast("Data contoh berjaya dimuat naik ke Firebase Firestore!", "success");
+            }
+        }
+
+        function attachRealtimeListeners() {
+            if (!db) return;
+
+            onSnapshot(doc(db, `${APP_NAMESPACE}_settings`, 'global_config'), (snap) => {
+                if (snap.exists()) {
+                    state.settings = snap.data();
+                    renderAll();
+                }
+            });
+
+            onSnapshot(collection(db, `${APP_NAMESPACE}_users`), (snap) => {
+                state.users = snap.docs.map(d => ({ ...d.data(), uid: d.id }));
+                renderAll();
+            });
+
+            onSnapshot(collection(db, `${APP_NAMESPACE}_org_goals`), (snap) => {
+                state.orgGoals = snap.docs.map(d => ({ ...d.data(), goalId: d.id }));
+                renderAll();
+            });
+
+            onSnapshot(collection(db, `${APP_NAMESPACE}_outcomes`), (snap) => {
+                state.outcomes = snap.docs.map(d => ({ ...d.data(), outcomeId: d.id }));
+                renderAll();
+            });
+
+            onSnapshot(collection(db, `${APP_NAMESPACE}_check_ins`), (snap) => {
+                state.checkIns = snap.docs.map(d => ({ ...d.data(), checkinId: d.id }));
+                renderAll();
+            });
+
+            onSnapshot(collection(db, `${APP_NAMESPACE}_recognitions`), (snap) => {
+                state.recognitions = snap.docs.map(d => ({ ...d.data(), recId: d.id }));
+                renderAll();
+            });
+
+            onSnapshot(collection(db, `${APP_NAMESPACE}_audit_logs`), (snap) => {
+                state.auditLogs = snap.docs.map(d => ({ ...d.data(), logId: d.id }));
+                renderAll();
+            });
+        }
+
+        // Fungsi Pembantu Simpan Data (Unified Firestore + Fallback)
+        async function dbSet(colName, docId, data) {
+            if (isFirebaseLive && db) {
+                await setDoc(doc(db, `${APP_NAMESPACE}_${colName}`, docId), data, { merge: true });
+            } else {
+                const mapKey = {
+                    'users': 'users',
+                    'org_goals': 'orgGoals',
+                    'outcomes': 'outcomes',
+                    'check_ins': 'checkIns',
+                    'recognitions': 'recognitions',
+                    'audit_logs': 'auditLogs'
+                }[colName];
+
+                if (colName === 'settings') {
+                    state.settings = { ...state.settings, ...data };
+                } else if (mapKey) {
+                    const idField = {
+                        users: 'uid', org_goals: 'goalId', outcomes: 'outcomeId',
+                        check_ins: 'checkinId', recognitions: 'recId', audit_logs: 'logId'
+                    }[colName];
+                    const idx = state[mapKey].findIndex(item => item[idField] === docId);
+                    if (idx >= 0) {
+                        state[mapKey][idx] = { ...state[mapKey][idx], ...data };
+                    } else {
+                        state[mapKey].unshift({ [idField]: docId, ...data });
+                    }
+                }
+                saveLocalFallbackState();
+                renderAll();
+            }
+        }
+
+        async function recordAuditLog(actionText) {
+            const currentUser = getCurrentUser();
+            const roleLabel = activeRole === 'super_admin' ? 'Super Admin' : activeRole === 'admin' ? 'Admin' : 'User';
+            const logId = 'log_' + Date.now();
+            const nowStr = new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
+            await dbSet('audit_logs', logId, {
+                logId,
+                actor: `${currentUser.name} (${roleLabel})`,
+                action: actionText,
+                time: `Hari ini, ${nowStr}`
+            });
+        }
+
+        // =========================================================================
+        // 3. FORMULA & PENGIRAAN SKOR BERASASKAN HASIL
+        // =========================================================================
+        function calculateOutcomeProgress(o) {
+            const base = Number(o.baselineValue) || 0;
+            const curr = Number(o.currentValue) || 0;
+            const target = Number(o.targetValue) || 100;
+
+            if (o.isLowerBetter || target < base) {
+                if (base === target) return 100;
+                const pct = ((base - curr) / (base - target)) * 100;
+                return Math.max(0, Math.min(100, Math.round(pct)));
+            } else {
+                if (target === base) return 100;
+                const pct = ((curr - base) / (target - base)) * 100;
+                return Math.max(0, Math.min(100, Math.round(pct)));
+            }
+        }
+
+        function calculateUserPerformance(userId) {
+            const userObj = state.users.find(u => u.uid === userId) || { collaborationScore: 85 };
+            const userOutcomes = state.outcomes.filter(o => o.userId === userId);
+
+            // 1. Pencapaian Hasil (W1) - Purata berpemberat
+            let outcomeAchievement = 0;
+            let totalWeight = 0;
+            let avgQuality5 = 0;
+
+            if (userOutcomes.length > 0) {
+                userOutcomes.forEach(o => {
+                    const w = Number(o.weightage) || 1;
+                    const pct = calculateOutcomeProgress(o);
+                    outcomeAchievement += pct * w;
+                    avgQuality5 += (Number(o.qualityRating) || 4.0) * w;
+                    totalWeight += w;
+                });
+                outcomeAchievement = totalWeight > 0 ? outcomeAchievement / totalWeight : 0;
+                avgQuality5 = totalWeight > 0 ? avgQuality5 / totalWeight : 4.0;
+            } else {
+                outcomeAchievement = 0;
+                avgQuality5 = 4.0;
+            }
+
+            // 2. Kualiti & Impak (W2) - Tukar skala 5.0 kepada peratusan 100%
+            const qualityPct = (avgQuality5 / 5) * 100;
+
+            // 3. Kolaborasi (W3) - Skor kolaborasi + bonus pengiktirafan
+            const recCount = state.recognitions.filter(r => r.toUserId === userId).length;
+            const collabPct = Math.min(100, (Number(userObj.collaborationScore) || 85) + (recCount * 2));
+
+            // Formula Utama: (W1 * Hasil) + (W2 * Kualiti) + (W3 * Kolaborasi)
+            const w1 = Number(state.settings.w1) / 100;
+            const w2 = Number(state.settings.w2) / 100;
+            const w3 = Number(state.settings.w3) / 100;
+
+            const finalScore = (w1 * outcomeAchievement) + (w2 * qualityPct) + (w3 * collabPct);
+
+            return {
+                outcomeAchievement: Math.round(outcomeAchievement),
+                qualityPct: Math.round(qualityPct),
+                avgQuality5: avgQuality5.toFixed(1),
+                collabPct: Math.round(collabPct),
+                finalScore: finalScore.toFixed(1),
+                outcomeCount: userOutcomes.length
+            };
+        }
+
+        function getCurrentUser() {
+            return state.users.find(u => u.uid === activeUserId) || state.users[0] || {
+                uid: 'user_101', name: 'Ahmad Albab', role: 'user', department: 'Pemasaran Digital'
+            };
+        }
+
+        // =========================================================================
+        // 4. KAWALAN PERANAN (RBAC) & NAVIGASI DINAMIK
+        // =========================================================================
+        window.switchDemoRole = function(role) {
+            activeRole = role;
+            // Pilih pengguna sampel yang sepadan dengan peranan tersebut
+            const matchingUsers = state.users.filter(u => u.role === role);
+            if (matchingUsers.length > 0) {
+                activeUserId = matchingUsers[0].uid;
+            }
+            // Pastikan tab semasa dibenarkan untuk peranan baru
+            const allowedTabs = getMenuItemsForRole(role).map(m => m.id);
+            if (!allowedTabs.includes(currentTab)) {
+                currentTab = 'dashboard';
+            }
+            renderAll();
+            const roleNames = { user: 'User (Staf)', admin: 'Admin (Pengurus)', super_admin: 'Super Admin' };
+            showToast(`Bertukar ke paparan ${roleNames[role]}`, 'info');
+        };
+
+        window.switchSpecificUser = function(uid) {
+            activeUserId = uid;
+            const u = state.users.find(x => x.uid === uid);
+            if (u) {
+                activeRole = u.role;
+            }
+            renderAll();
+        };
+
+        window.navigateTab = function(tabId) {
+            currentTab = tabId;
+            renderAll();
+            // Tutup sidebar mudah alih jika terbuka
+            const sb = document.getElementById('sidebar');
+            const bd = document.getElementById('sidebar-backdrop');
+            if (!sb.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+                sb.classList.add('-translate-x-full');
+                bd.classList.add('hidden');
+            }
+        };
+
+        function getMenuItemsForRole(role) {
+            const baseMenu = [
+                { id: 'dashboard', label: 'Papan Pemuka', icon: 'layout-dashboard', section: 'TERAS PRESTASI' },
+                { id: 'outcomes', label: 'Hasil Saya (Outcomes)', icon: 'target', section: 'TERAS PRESTASI' },
+                { id: 'alignment', label: 'Peta Penjajaran', icon: 'git-fork', section: 'TERAS PRESTASI' },
+                { id: 'checkins', label: 'Check-In & Pengiktirafan', icon: 'award', section: 'TERAS PRESTASI' }
+            ];
+
+            const adminMenu = [
+                { id: 'approvals', label: 'Kelulusan & Pasukan', icon: 'check-circle-2', section: 'PENGURUSAN (ADMIN)', badge: state.outcomes.filter(o => o.approvalStatus === 'pending').length },
+                { id: 'analytics', label: 'Analitik & Matriks Impak', icon: 'bar-chart-3', section: 'PENGURUSAN (ADMIN)' }
+            ];
+
+            const superAdminMenu = [
+                { id: 'users', label: 'Pengguna & Peranan', icon: 'users-cog', section: 'TADBIR URUS (SUPER ADMIN)' },
+                { id: 'settings', label: 'Tetapan Sistem & Formula', icon: 'sliders', section: 'TADBIR URUS (SUPER ADMIN)' },
+                { id: 'audit', label: 'Log Audit Keselamatan', icon: 'file-clock', section: 'TADBIR URUS (SUPER ADMIN)' }
+            ];
+
+            if (role === 'super_admin') return [...baseMenu, ...adminMenu, ...superAdminMenu];
+            if (role === 'admin') return [...baseMenu, ...adminMenu];
+            return baseMenu;
+        }
+
+        // =========================================================================
+        // 5. PAPARAN UI UTAMA (RENDER ENGINE)
+        // =========================================================================
+        function renderAll() {
+            updateTopBarAndSidebar();
+            renderActiveView();
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function updateTopBarAndSidebar() {
+            // Kemas kini butang peranan di bar atas
+            ['user', 'admin', 'super_admin'].forEach(r => {
+                const btn = document.getElementById(`role-btn-${r}`);
+                if (!btn) return;
+                if (r === activeRole) {
+                    btn.className = "px-2.5 py-1 rounded-md font-semibold transition-all bg-indigo-600 text-white shadow-xs";
+                } else {
+                    btn.className = "px-2.5 py-1 rounded-md font-medium transition-all text-slate-300 hover:text-white";
+                }
+            });
+
+            // Kemas kini profil di Sidebar
+            const user = getCurrentUser();
+            const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            document.getElementById('sidebar-avatar').textContent = initials;
+            document.getElementById('sidebar-user-name').textContent = user.name;
+            document.getElementById('sidebar-user-dept').textContent = user.department;
+            document.getElementById('sidebar-cycle-badge').textContent = state.settings.cycle.split('(')[1]?.replace(')', '') || 'Q4 2026';
+
+            const roleBadge = document.getElementById('sidebar-role-badge');
+            if (activeRole === 'super_admin') {
+                roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200";
+                roleBadge.innerHTML = `<i data-lucide="crown" class="w-3 h-3"></i> Super Admin`;
+            } else if (activeRole === 'admin') {
+                roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200";
+                roleBadge.innerHTML = `<i data-lucide="shield-check" class="w-3 h-3"></i> Admin (Pengurus)`;
+            } else {
+                roleBadge.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200";
+                roleBadge.innerHTML = `<i data-lucide="user" class="w-3 h-3"></i> User (Staf)`;
+            }
+
+            // Kemas kini Dropdown Persona
+            const personaSel = document.getElementById('persona-selector');
+            personaSel.innerHTML = state.users.map(u => `
+                <option value="${u.uid}" ${u.uid === activeUserId ? 'selected' : ''}>
+                    ${u.name} (${u.role === 'super_admin' ? 'Super Admin' : u.role === 'admin' ? 'Admin' : 'User'})
+                </option>
+            `).join('');
+
+            // Kemas kini Paparan Pemberat di bawah Sidebar
+            document.getElementById('weight-disp-w1').textContent = state.settings.w1 + '%';
+            document.getElementById('weight-disp-w2').textContent = state.settings.w2 + '%';
+            document.getElementById('weight-disp-w3').textContent = state.settings.w3 + '%';
+
+            // Bina Menu Navigasi Dinamik mengikut RBAC
+            const menuItems = getMenuItemsForRole(activeRole);
+            const navEl = document.getElementById('sidebar-nav');
+            let currentSection = '';
+            let navHtml = '';
+
+            menuItems.forEach(item => {
+                if (item.section !== currentSection) {
+                    currentSection = item.section;
+                    navHtml += `<div class="pt-3 pb-1 px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase">${currentSection}</div>`;
+                }
+                const isActive = currentTab === item.id;
+                navHtml += `
+                    <button onclick="navigateTab('${item.id}')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        isActive 
+                        ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-2xs border border-indigo-100' 
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }">
+                        <span class="flex items-center gap-2.5">
+                            <i data-lucide="${item.icon}" class="w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-400'}"></i>
+                            <span>${item.label}</span>
+                        </span>
+                        ${item.badge > 0 ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white">${item.badge}</span>` : ''}
+                    </button>
+                `;
+            });
+            navEl.innerHTML = navHtml;
+        }
+
+        function renderActiveView() {
+            const main = document.getElementById('main-content');
+            const titleEl = document.getElementById('page-title');
+            const subEl = document.getElementById('page-subtitle');
+
+            switch (currentTab) {
+                case 'dashboard':
+                    titleEl.textContent = activeRole === 'super_admin' ? 'Konsol Eksekutif & Tadbir Urus' : activeRole === 'admin' ? 'Pusat Kawalan Prestasi Pasukan' : 'Papan Pemuka Prestasi Saya';
+                    subEl.textContent = `Kitaran Aktif: ${state.settings.cycle} • Penilaian berasaskan bukti hasil sebenar`;
+                    main.innerHTML = renderDashboardView();
+                    break;
+                case 'outcomes':
+                    titleEl.textContent = 'Penjejak Hasil Utama (Outcome Tracker)';
+                    subEl.textContent = 'Urus sasaran peribadi, kemas kini metrik kemajuan, dan muat naik bukti kerja';
+                    main.innerHTML = renderOutcomesView();
+                    break;
+                case 'alignment':
+                    titleEl.textContent = 'Peta Penjajaran Strategik (Alignment Map)';
+                    subEl.textContent = 'Hubungan langsung antara tugasan harian dengan matlamat North Star organisasi';
+                    main.innerHTML = renderAlignmentView();
+                    break;
+                case 'checkins':
+                    titleEl.textContent = 'Check-In Berterusan & Pengiktirafan 360°';
+                    subEl.textContent = 'Log kemas kini mingguan, bukti impak, dan penghargaan rakan sekerja';
+                    main.innerHTML = renderCheckInsView();
+                    break;
+                case 'approvals':
+                    titleEl.textContent = 'Pusat Kelulusan & Pemantauan Pasukan';
+                    subEl.textContent = 'Sahkan cadangan sasaran, semak bukti kerja, dan beri skor kualiti';
+                    main.innerHTML = renderApprovalsView();
+                    break;
+                case 'analytics':
+                    titleEl.textContent = 'Analitik Prestasi & Matriks Impak';
+                    subEl.textContent = 'Analisis taburan pencapaian hasil merentas jabatan dan individu';
+                    main.innerHTML = renderAnalyticsView();
+                    break;
+                case 'users':
+                    titleEl.textContent = 'Pengurusan Pengguna & Kawalan Peranan (RBAC)';
+                    subEl.textContent = 'Tetapkan peranan User, Admin, dan Super Admin dalam pangkalan data Firebase';
+                    main.innerHTML = renderUsersView();
+                    break;
+                case 'settings':
+                    titleEl.textContent = 'Tetapan Sistem & Formula Pemarkahan';
+                    subEl.textContent = 'Konfigurasi matlamat North Star organisasi dan pemberat markah global';
+                    main.innerHTML = renderSettingsView();
+                    break;
+                case 'audit':
+                    titleEl.textContent = 'Log Audit Keselamatan Sistem';
+                    subEl.textContent = 'Rekod kronologi setiap perubahan data, kelulusan, dan tetapan sistem';
+                    main.innerHTML = renderAuditView();
+                    break;
+            }
+        }
+
+        // =========================================================================
+        // 6. TEMPLAT SETIAP MODUL / HALAMAN
+        // =========================================================================
+
+        // A. PAPAN PEMUKA (DASHBOARD)
+        function renderDashboardView() {
+            const user = getCurrentUser();
+            const perf = calculateUserPerformance(user.uid);
+            const myOutcomes = state.outcomes.filter(o => o.userId === user.uid);
+            const pendingCount = state.outcomes.filter(o => o.approvalStatus === 'pending').length;
+
+            // Statistik Organisasi untuk Admin & Super Admin
+            const allUsersPerf = state.users.filter(u => u.role === 'user').map(u => calculateUserPerformance(u.uid));
+            const orgAvgScore = allUsersPerf.length > 0 
+                ? (allUsersPerf.reduce((acc, p) => acc + parseFloat(p.finalScore), 0) / allUsersPerf.length).toFixed(1) 
+                : '0.0';
+
+            return `
+                <div class="fade-in space-y-6">
+                    <!-- Banner Formula & Skor Utama -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200/50 relative overflow-hidden">
+                            <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                                <div class="space-y-2">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 text-indigo-100 backdrop-blur-xs">
+                                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> ${state.settings.cycle}
+                                    </span>
+                                    <h2 class="font-heading text-2xl sm:text-3xl font-bold">Selamat Kembali, ${user.name}</h2>
+                                    <p class="text-indigo-100 text-sm max-w-md">
+                                        Prestasi anda dinilai berdasarkan <strong>hasil impak sebenar</strong>, bukan sekadar kehadiran atau jam bekerja.
+                                    </p>
+                                    <div class="pt-2 flex flex-wrap gap-2">
+                                        <button onclick="openNewOutcomeModal()" class="px-3.5 py-2 rounded-lg bg-white text-indigo-700 font-semibold text-xs hover:bg-indigo-50 transition shadow-xs">
+                                            + Cadang Hasil Baru
+                                        </button>
+                                        <button onclick="navigateTab('outcomes')" class="px-3.5 py-2 rounded-lg bg-indigo-500/40 hover:bg-indigo-500/60 text-white font-semibold text-xs border border-white/20 transition">
+                                            Kemas Kini Kemajuan
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Skor Keseluruhan Bulat -->
+                                <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 text-center min-w-[160px]">
+                                    <span class="text-xs font-medium text-indigo-200 uppercase tracking-wider">Skor Impak Anda</span>
+                                    <div class="font-heading text-4xl font-extrabold text-white my-1">${perf.finalScore}<span class="text-lg text-indigo-200">%</span></div>
+                                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${parseFloat(perf.finalScore) >= 80 ? 'bg-emerald-400/20 text-emerald-200' : 'bg-amber-400/20 text-amber-200'}">
+                                        ${parseFloat(perf.finalScore) >= 80 ? 'Cemerlang (On Track)' : 'Memuaskan'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Kad Pecahan Formula Skor -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-heading font-bold text-slate-900 text-sm">Pecahan Formula Prestasi</h3>
+                                    <span class="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Auto-Kira</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span class="font-medium text-slate-600">1. Pencapaian Hasil (${state.settings.w1}%)</span>
+                                            <span class="font-bold text-slate-900">${perf.outcomeAchievement}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-emerald-500 h-full rounded-full" style="width: ${perf.outcomeAchievement}%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span class="font-medium text-slate-600">2. Kualiti & Impak (${state.settings.w2}%)</span>
+                                            <span class="font-bold text-slate-900">${perf.avgQuality5}/5.0 (${perf.qualityPct}%)</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-indigo-600 h-full rounded-full" style="width: ${perf.qualityPct}%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span class="font-medium text-slate-600">3. Kolaborasi 360° (${state.settings.w3}%)</span>
+                                            <span class="font-bold text-slate-900">${perf.collabPct}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                            <div class="bg-amber-500 h-full rounded-full" style="width: ${perf.collabPct}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-4 pt-3 border-t border-slate-100">
+                                Formula: (${state.settings.w1}% × Hasil) + (${state.settings.w2}% × Kualiti) + (${state.settings.w3}% × Kolaborasi)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- KPI Cards Mengikut Peranan -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500">Hasil Aktif Saya</span>
+                                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="target" class="w-4 h-4"></i></div>
+                            </div>
+                            <p class="font-heading text-2xl font-bold text-slate-900 mt-2">${myOutcomes.length}</p>
+                            <p class="text-xs text-slate-500 mt-1">${myOutcomes.filter(o => o.approvalStatus === 'approved').length} telah diluluskan</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500">Purata Skor Organisasi</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="bar-chart-2" class="w-4 h-4"></i></div>
+                            </div>
+                            <p class="font-heading text-2xl font-bold text-slate-900 mt-2">${orgAvgScore}%</p>
+                            <p class="text-xs text-emerald-600 font-medium mt-1">+4.2% berbanding suku lepas</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500">Menunggu Kelulusan</span>
+                                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i data-lucide="clock" class="w-4 h-4"></i></div>
+                            </div>
+                            <p class="font-heading text-2xl font-bold text-slate-900 mt-2">${pendingCount}</p>
+                            <p class="text-xs text-slate-500 mt-1">${activeRole !== 'user' ? '<button onclick="navigateTab(\'approvals\')" class="text-indigo-600 font-semibold hover:underline">Semak sekarang &rarr;</button>' : 'Dalam semakan Admin'}</p>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500">Pengiktirafan 360°</span>
+                                <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><i data-lucide="award" class="w-4 h-4"></i></div>
+                            </div>
+                            <p class="font-heading text-2xl font-bold text-slate-900 mt-2">${state.recognitions.length}</p>
+                            <p class="text-xs text-slate-500 mt-1">Lencana impak diberikan</p>
+                        </div>
+                    </div>
+
+                    <!-- Senarai Hasil Utama & Aktiviti Check-In Terkini -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading font-bold text-slate-900">Kemajuan Hasil Utama (Outcomes)</h3>
+                                <button onclick="navigateTab('outcomes')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Lihat Semua &rarr;</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${(activeRole === 'user' ? myOutcomes : state.outcomes).slice(0, 4).map(o => renderOutcomeCardCompact(o)).join('') || '<p class="text-sm text-slate-500 py-4 text-center">Tiada sasaran direkodkan lagi.</p>'}
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-heading font-bold text-slate-900">Log Check-In Terkini</h3>
+                                <button onclick="navigateTab('checkins')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Suapan Penuh</button>
+                            </div>
+                            <div class="space-y-4">
+                                ${state.checkIns.slice(0, 3).map(c => `
+                                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-bold text-slate-900">${c.userName}</span>
+                                            <span class="text-[10px] text-slate-400">${c.timestamp || 'Baru sebentar'}</span>
+                                        </div>
+                                        <p class="text-xs font-medium text-indigo-700 truncate">${c.outcomeTitle}</p>
+                                        <p class="text-xs text-slate-600 line-clamp-2">"${c.accomplishmentNote}"</p>
+                                        <div class="pt-1 flex items-center justify-between text-[11px]">
+                                            <span class="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Kemajuan: ${c.newValue} ${c.unit}</span>
+                                            <a href="${c.evidenceUrl}" target="_blank" class="text-indigo-600 hover:underline inline-flex items-center gap-1">
+                                                <i data-lucide="external-link" class="w-3 h-3"></i> Bukti
+                                            </a>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderOutcomeCardCompact(o) {
+            const pct = calculateOutcomeProgress(o);
+            const owner = state.users.find(u => u.uid === o.userId)?.name || 'Staf';
+            const statusBadge = o.approvalStatus === 'approved'
+                ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Diluluskan</span>`
+                : o.approvalStatus === 'revision_needed'
+                ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">Perlu Semakan</span>`
+                : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Menunggu Kelulusan</span>`;
+
+            return `
+                <div class="p-4 rounded-xl border border-slate-200 hover:border-indigo-200 transition bg-slate-50/40">
+                    <div class="flex flex-wrap items-start justify-between gap-2 mb-2">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                ${statusBadge}
+                                <span class="text-[11px] font-medium text-slate-500">${o.department} • ${owner}</span>
+                            </div>
+                            <h4 class="font-semibold text-sm text-slate-900">${o.title}</h4>
+                        </div>
+                        <button onclick="openCheckInModal('${o.outcomeId}')" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:border-indigo-500 hover:text-indigo-600 text-xs font-semibold text-slate-700 transition shrink-0">
+                            + Check-In
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-600 mb-1.5">
+                        <span>Asas: <strong>${o.baselineValue}</strong> &rarr; Semasa: <strong class="text-indigo-700">${o.currentValue} ${o.unit}</strong> (Sasaran: ${o.targetValue})</span>
+                        <span class="font-bold text-slate-900">${pct}%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500 ${pct >= 75 ? 'bg-emerald-500' : pct >= 40 ? 'bg-indigo-600' : 'bg-amber-500'}" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // B. HASIL SAYA (OUTCOME TRACKER)
+        function renderOutcomesView() {
+            const user = getCurrentUser();
+            const list = activeRole === 'user' 
+                ? state.outcomes.filter(o => o.userId === user.uid)
+                : state.outcomes;
+
+            return `
+                <div class="fade-in space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200">
+                        <div>
+                            <h3 class="font-heading font-bold text-slate-900 text-base">
+                                ${activeRole === 'user' ? 'Senarai Sasaran Hasil Peribadi Anda' : 'Semua Sasaran Hasil Merentas Pasukan'}
+                            </h3>
+                            <p class="text-xs text-slate-500">Klik "Log Check-In" untuk mengemas kini metrik kemajuan dan memuat naik pautan bukti impak.</p>
+                        </div>
+                        <button onclick="openNewOutcomeModal()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs">
+                            + Tambah Outcome Baru
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        ${list.map(o => {
+                            const pct = calculateOutcomeProgress(o);
+                            const owner = state.users.find(u => u.uid === o.userId)?.name || 'Staf';
+                            const orgGoal = state.orgGoals.find(g => g.goalId === o.alignedOrgGoalId)?.title || 'Matlamat Strategik Organisasi';
+                            return `
+                                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between space-y-4">
+                                    <div>
+                                        <div class="flex items-center justify-between gap-2 mb-2">
+                                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                                                o.approvalStatus === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                o.approvalStatus === 'revision_needed' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                                                'bg-amber-50 text-amber-700 border border-amber-200'
+                                            }">
+                                                ${o.approvalStatus === 'approved' ? 'Diluluskan' : o.approvalStatus === 'revision_needed' ? 'Perlu Semakan' : 'Menunggu Kelulusan'}
+                                            </span>
+                                            <span class="text-xs font-semibold text-slate-500">Pemberat: ${o.weightage}% • Kualiti: ★ ${o.qualityRating || '4.0'}</span>
+                                        </div>
+
+                                        <h4 class="font-heading font-bold text-slate-900 text-base leading-snug">${o.title}</h4>
+                                        <p class="text-xs text-slate-500 mt-1">Pemilik: <strong class="text-slate-700">${owner}</strong> (${o.department})</p>
+
+                                        <div class="mt-3 p-2.5 rounded-lg bg-indigo-50/60 border border-indigo-100 flex items-start gap-2">
+                                            <i data-lucide="compass" class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5"></i>
+                                            <span class="text-[11px] text-indigo-900"><strong>North Star:</strong> ${orgGoal}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-3 pt-2 border-t border-slate-100">
+                                        <div>
+                                            <div class="flex justify-between text-xs mb-1">
+                                                <span class="text-slate-500">Asas: ${o.baselineValue} | Semasa: <strong class="text-slate-900">${o.currentValue} ${o.unit}</strong> | Sasaran: ${o.targetValue}</span>
+                                                <span class="font-bold text-indigo-600">${pct}%</span>
+                                            </div>
+                                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                                <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${pct}%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between gap-2">
+                                            <button onclick="openCheckInModal('${o.outcomeId}')" class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                                                <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Log Check-In & Bukti
+                                            </button>
+                                            ${activeRole !== 'user' ? `
+                                                <button onclick="openVerifyModal('${o.outcomeId}')" class="py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                                                    Nilai / Luluskan
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // C. PETA PENJAJARAN (ALIGNMENT MAP)
+        function renderAlignmentView() {
+            return `
+                <div class="fade-in space-y-6">
+                    <div class="bg-indigo-900 text-white rounded-2xl p-6 shadow-md">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-2 rounded-lg bg-white/10"><i data-lucide="compass" class="w-5 h-5 text-amber-300"></i></span>
+                            <h3 class="font-heading font-bold text-lg">Hierarki Penjajaran Strategik (North Star &rarr; Jabatan &rarr; Individu)</h3>
+                        </div>
+                        <p class="text-xs sm:text-sm text-indigo-200">
+                            Setiap sasaran individu dipautkan secara telus kepada matlamat utama organisasi supaya seluruh pasukan bergerak ke arah impak yang sama.
+                        </p>
+                    </div>
+
+                    <div class="space-y-6">
+                        ${state.orgGoals.map(goal => {
+                            const linkedOutcomes = state.outcomes.filter(o => o.alignedOrgGoalId === goal.goalId);
+                            const avgGoalProgress = linkedOutcomes.length > 0
+                                ? Math.round(linkedOutcomes.reduce((acc, o) => acc + calculateOutcomeProgress(o), 0) / linkedOutcomes.length)
+                                : 0;
+
+                            return `
+                                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+                                    <!-- Level 1: North Star -->
+                                    <div class="p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400">MATLAMAT ORGANISASI (NORTH STAR)</span>
+                                            <h4 class="font-heading font-bold text-base sm:text-lg mt-0.5">${goal.title}</h4>
+                                            <p class="text-xs text-slate-300 mt-1">Kitaran: ${goal.cycle} • Penaja: ${goal.owner}</p>
+                                        </div>
+                                        <div class="text-left sm:text-right shrink-0">
+                                            <span class="text-2xl font-extrabold text-emerald-400">${avgGoalProgress}%</span>
+                                            <span class="block text-[11px] text-slate-400">Kemajuan Terkumpul</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Level 2 & 3: Cascading Outcomes -->
+                                    <div class="pl-4 sm:pl-8 border-l-2 border-indigo-200 space-y-3">
+                                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sasaran Penyumbang (${linkedOutcomes.length} Outcomes Dipautkan)</p>
+                                        ${linkedOutcomes.map(o => {
+                                            const pct = calculateOutcomeProgress(o);
+                                            const owner = state.users.find(u => u.uid === o.userId)?.name || 'Staf';
+                                            return `
+                                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                    <div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">${o.department}</span>
+                                                            <span class="text-xs font-semibold text-slate-600">${owner}</span>
+                                                        </div>
+                                                        <p class="font-semibold text-sm text-slate-900 mt-1">${o.title}</p>
+                                                    </div>
+                                                    <div class="w-full sm:w-48 shrink-0">
+                                                        <div class="flex justify-between text-xs mb-1">
+                                                            <span class="text-slate-500">${o.currentValue}/${o.targetValue} ${o.unit}</span>
+                                                            <span class="font-bold text-indigo-700">${pct}%</span>
+                                                        </div>
+                                                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                                                            <div class="bg-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('') || '<p class="text-xs text-slate-500">Belum ada sasaran dipautkan ke matlamat ini.</p>'}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // D. CHECK-IN & PENGIKTIRAFAN 360°
+        function renderCheckInsView() {
+            const otherUsers = state.users.filter(u => u.uid !== activeUserId);
+            return `
+                <div class="fade-in grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Kolum Kiri & Tengah: Suapan Check-In & Bukti -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                            <h3 class="font-heading font-bold text-slate-900 mb-1">Suapan Kemajuan & Bukti Hasil (Evidence Log)</h3>
+                            <p class="text-xs text-slate-500 mb-4">Setiap kemas kini disertakan dengan bukti kerja yang boleh disahkan oleh pengurus.</p>
+                            <div class="space-y-4">
+                                ${state.checkIns.map(c => `
+                                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2.5">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center">
+                                                    ${c.userName.substring(0,2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-bold text-slate-900">${c.userName}</p>
+                                                    <p class="text-[11px] text-slate-500">${c.timestamp || 'Baru dikemas kini'}</p>
+                                                </div>
+                                            </div>
+                                            <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                                Metrik: ${c.newValue} ${c.unit}
+                                            </span>
+                                        </div>
+                                        <p class="text-xs font-semibold text-indigo-700">Sasaran: ${c.outcomeTitle}</p>
+                                        <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5">
+                                            <p class="text-slate-800"><strong>Pencapaian:</strong> ${c.accomplishmentNote}</p>
+                                            ${c.blockerNote ? `<p class="text-amber-700"><strong>Halangan:</strong> ${c.blockerNote}</p>` : ''}
+                                        </div>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <a href="${c.evidenceUrl}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:underline">
+                                                <i data-lucide="file-check-2" class="w-4 h-4"></i> Lihat Bukti Kerja (${c.evidenceUrl})
+                                            </a>
+                                            <span class="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                                                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Direkod dalam Firestore
+                                            </span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kolum Kanan: Penghargaan Rakan Sekerja 360° -->
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+                            <h3 class="font-heading font-bold text-slate-900 mb-1">Beri Pengiktirafan 360°</h3>
+                            <p class="text-xs text-slate-500 mb-4">Hargai impak rakan sekerja untuk meningkatkan skor kolaborasi mereka.</p>
+                            <form onsubmit="handleSendRecognition(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Rakan Sekerja</label>
+                                    <select id="rec-to-user" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                                        ${otherUsers.map(u => `<option value="${u.uid}">${u.name} (${u.department})</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Lencana Impak (Impact Badge)</label>
+                                    <select id="rec-badge" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                                        <option value="Impak Tinggi">🚀 Impak Tinggi</option>
+                                        <option value="Penyelesai Masalah">💡 Penyelesai Masalah</option>
+                                        <option value="Kolaborasi Terbaik">🤝 Kolaborasi Terbaik</option>
+                                        <option value="Pantas & Tepat">⚡ Pantas & Tepat</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mesej Penghargaan</label>
+                                    <textarea id="rec-message" rows="2" required placeholder="Nyatakan bagaimana mereka membantu mencapai hasil..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"></textarea>
+                                </div>
+                                <button type="submit" class="w-full py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition">
+                                    Hantar Lencana Pengiktirafan
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                            <h4 class="font-heading font-bold text-slate-900 text-sm">Dinding Pengiktirafan Pasukan</h4>
+                            ${state.recognitions.map(r => `
+                                <div class="p-3 rounded-xl bg-purple-50/60 border border-purple-100 space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold text-purple-900">${r.toName}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-200 text-purple-900">${r.badge}</span>
+                                    </div>
+                                    <p class="text-xs text-slate-700">"${r.message}"</p>
+                                    <p class="text-[10px] text-slate-400">Daripada: ${r.fromName}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // E. KELULUSAN & PASUKAN (ADMIN & SUPER ADMIN)
+        function renderApprovalsView() {
+            const pendingOutcomes = state.outcomes.filter(o => o.approvalStatus === 'pending');
+            const staffUsers = state.users.filter(u => u.role === 'user');
+
+            return `
+                <div class="fade-in space-y-6">
+                    <!-- Baris Kelulusan Tertunda -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-heading font-bold text-slate-900">Cadangan Hasil Menunggu Kelulusan (${pendingOutcomes.length})</h3>
+                                <p class="text-xs text-slate-500">Semak keselarasan sasaran staf dan berikan pengesahan kualiti.</p>
+                            </div>
+                        </div>
+                        ${pendingOutcomes.length > 0 ? `
+                            <div class="space-y-3">
+                                ${pendingOutcomes.map(o => {
+                                    const owner = state.users.find(u => u.uid === o.userId)?.name || 'Staf';
+                                    return `
+                                        <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div>
+                                                <span class="text-[11px] font-bold text-amber-800 uppercase">${o.department} • Dicadang oleh ${owner}</span>
+                                                <h4 class="font-bold text-sm text-slate-900 mt-0.5">${o.title}</h4>
+                                                <p class="text-xs text-slate-600 mt-1">Asas: ${o.baselineValue} &rarr; Sasaran: <strong>${o.targetValue} ${o.unit}</strong> (Pemberat: ${o.weightage}%)</p>
+                                            </div>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <button onclick="openVerifyModal('${o.outcomeId}')" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs">
+                                                    Semak & Luluskan
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : `
+                            <div class="p-6 text-center bg-slate-50 rounded-xl border border-slate-100">
+                                <p class="text-sm font-medium text-slate-600">Semua cadangan hasil telah disemak dan diluluskan!</p>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Jadual Prestasi Ahli Pasukan -->
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                        <div class="p-6 border-b border-slate-100">
+                            <h3 class="font-heading font-bold text-slate-900">Kalibrasi & Skor Prestasi Ahli Pasukan</h3>
+                            <p class="text-xs text-slate-500">Skor dikira secara automatik berdasarkan formula pemberat semasa (${state.settings.w1}% / ${state.settings.w2}% / ${state.settings.w3}%).</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase">
+                                        <th class="py-3 px-6">Nama Staf & Jabatan</th>
+                                        <th class="py-3 px-4 text-center">Hasil Aktif</th>
+                                        <th class="py-3 px-4 text-center">Pencapaian (${state.settings.w1}%)</th>
+                                        <th class="py-3 px-4 text-center">Kualiti (${state.settings.w2}%)</th>
+                                        <th class="py-3 px-4 text-center">Kolaborasi (${state.settings.w3}%)</th>
+                                        <th class="py-3 px-6 text-right">Skor Akhir</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-sm">
+                                    ${staffUsers.map(u => {
+                                        const p = calculateUserPerformance(u.uid);
+                                        return `
+                                            <tr class="hover:bg-slate-50/80">
+                                                <td class="py-3.5 px-6">
+                                                    <p class="font-semibold text-slate-900">${u.name}</p>
+                                                    <p class="text-xs text-slate-500">${u.department}</p>
+                                                </td>
+                                                <td class="py-3.5 px-4 text-center font-medium">${p.outcomeCount}</td>
+                                                <td class="py-3.5 px-4 text-center font-semibold text-emerald-700">${p.outcomeAchievement}%</td>
+                                                <td class="py-3.5 px-4 text-center font-semibold text-indigo-700">★ ${p.avgQuality5}</td>
+                                                <td class="py-3.5 px-4 text-center font-semibold text-amber-700">${p.collabPct}%</td>
+                                                <td class="py-3.5 px-6 text-right">
+                                                    <span class="inline-block px-3 py-1 rounded-full font-bold text-xs bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                        ${p.finalScore}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // F. ANALITIK PRESTASI (ADMIN & SUPER ADMIN)
+        function renderAnalyticsView() {
+            const depts = [...new Set(state.users.map(u => u.department))];
+            return `
+                <div class="fade-in space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                            <h3 class="font-heading font-bold text-slate-900 mb-1">Perbandingan Pencapaian Mengikut Jabatan</h3>
+                            <p class="text-xs text-slate-500 mb-5">Purata peratusan pencapaian hasil sebenar dalam kitaran ${state.settings.cycle}</p>
+                            <div class="space-y-4">
+                                ${depts.map(dept => {
+                                    const deptOutcomes = state.outcomes.filter(o => o.department === dept);
+                                    const avg = deptOutcomes.length > 0
+                                        ? Math.round(deptOutcomes.reduce((a, b) => a + calculateOutcomeProgress(b), 0) / deptOutcomes.length)
+                                        : 75;
+                                    return `
+                                        <div>
+                                            <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                                <span class="text-slate-700">${dept}</span>
+                                                <span class="text-indigo-700">${avg}%</span>
+                                            </div>
+                                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                                <div class="bg-gradient-to-r from-indigo-500 to-violet-600 h-full rounded-full" style="width: ${avg}%"></div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                            <h3 class="font-heading font-bold text-slate-900 mb-1">Matriks Impak vs. Usaha (9-Box Insight)</h3>
+                            <p class="text-xs text-slate-500 mb-4">Pengelasan penyumbang berdasarkan skor hasil dan penilaian kualiti pengurus</p>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                                    <span class="font-bold text-emerald-900 block mb-1">🌟 Bintang Impak (High Impact)</span>
+                                    <p class="text-emerald-700 text-[11px]">Skor > 85% dengan bukti kerja disahkan & kualiti tinggi.</p>
+                                    <p class="font-bold text-emerald-900 mt-2 text-sm">
+                                        ${state.users.filter(u => u.role === 'user' && parseFloat(calculateUserPerformance(u.uid).finalScore) >= 85).map(u => u.name).join(', ') || 'Nurul Izzah, Ahmad Albab'}
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+                                    <span class="font-bold text-indigo-900 block mb-1">📈 Prestasi Konsisten (Solid)</span>
+                                    <p class="text-indigo-700 text-[11px]">Skor 70% - 84%, memenuhi sasaran utama jabatan.</p>
+                                    <p class="font-bold text-indigo-900 mt-2 text-sm">
+                                        ${state.users.filter(u => u.role === 'user' && parseFloat(calculateUserPerformance(u.uid).finalScore) < 85).map(u => u.name).join(', ') || 'Kavita Devi'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // G. PENGURUSAN PENGGUNA & PERANAN (SUPER ADMIN)
+        function renderUsersView() {
+            return `
+                <div class="fade-in space-y-6">
+                    <!-- Borang Tambah Pengguna Baru -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+                        <h3 class="font-heading font-bold text-slate-900 mb-1">Daftar Pengguna & Tetapkan Peranan (RBAC)</h3>
+                        <p class="text-xs text-slate-500 mb-4">Rekod baru akan disimpan terus ke koleksi <code>users</code> di Firebase Firestore.</p>
+                        <form onsubmit="handleAddNewUser(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                            <input type="text" id="new-user-name" required placeholder="Nama Penuh" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                            <input type="email" id="new-user-email" required placeholder="Emel Rasmi" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                            <input type="text" id="new-user-dept" required placeholder="Jabatan" class="rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                            <select id="new-user-role" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold">
+                                <option value="user">1. User (Staf)</option>
+                                <option value="admin">2. Admin (Pengurus)</option>
+                                <option value="super_admin">3. Super Admin</option>
+                            </select>
+                            <button type="submit" class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2 px-4 transition">
+                                + Tambah Pengguna
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Senarai Pengguna & Kawalan Peranan -->
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase">
+                                        <th class="py-3 px-6">Pengguna</th>
+                                        <th class="py-3 px-4">Jabatan</th>
+                                        <th class="py-3 px-4">Peranan Semasa (Klik untuk ubah)</th>
+                                        <th class="py-3 px-6 text-right">Tindakan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-sm">
+                                    ${state.users.map(u => `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="py-3.5 px-6">
+                                                <p class="font-semibold text-slate-900">${u.name}</p>
+                                                <p class="text-xs text-slate-500">${u.email}</p>
+                                            </td>
+                                            <td class="py-3.5 px-4 text-xs font-medium text-slate-700">${u.department}</td>
+                                            <td class="py-3.5 px-4">
+                                                <select onchange="handleChangeUserRole('${u.uid}', this.value)" class="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold bg-white">
+                                                    <option value="user" ${u.role === 'user' ? 'selected' : ''}>User (Staf)</option>
+                                                    <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin (Pengurus)</option>
+                                                    <option value="super_admin" ${u.role === 'super_admin' ? 'selected' : ''}>Super Admin</option>
+                                                </select>
+                                            </td>
+                                            <td class="py-3.5 px-6 text-right">
+                                                <button onclick="switchSpecificUser('${u.uid}')" class="text-xs font-semibold text-indigo-600 hover:underline">
+                                                    Simulasi Akaun Ini
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // H. TETAPAN SISTEM & FORMULA (SUPER ADMIN)
+        function renderSettingsView() {
+            return `
+                <div class="fade-in grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Konfigurasi Formula Pemarkahan Global -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center"><i data-lucide="sliders" class="w-4 h-4"></i></div>
+                            <div>
+                                <h3 class="font-heading font-bold text-slate-900">Formula Pemberat Skor Global</h3>
+                                <p class="text-xs text-slate-500">Jumlah pemberat W1 + W2 + W3 mestilah bersamaan 100%.</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleSaveSystemSettings(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kitaran Penilaian Aktif</label>
+                                <input type="text" id="set-cycle" value="${state.settings.cycle}" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-emerald-700 mb-1">W1: Hasil (%)</label>
+                                    <input type="number" id="set-w1" min="0" max="100" value="${state.settings.w1}" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-indigo-700 mb-1">W2: Kualiti (%)</label>
+                                    <input type="number" id="set-w2" min="0" max="100" value="${state.settings.w2}" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-amber-700 mb-1">W3: Kolab (%)</label>
+                                    <input type="number" id="set-w3" min="0" max="100" value="${state.settings.w3}" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+                                Simpan Konfigurasi Global ke Firebase
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Pengurusan Matlamat North Star -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center"><i data-lucide="compass" class="w-4 h-4"></i></div>
+                            <div>
+                                <h3 class="font-heading font-bold text-slate-900">Matlamat Organisasi (North Star)</h3>
+                                <p class="text-xs text-slate-500">Tetapkan visi strategik utama untuk dijajarkan oleh semua jabatan.</p>
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleAddOrgGoal(event)" class="flex gap-2">
+                            <input type="text" id="new-org-goal-title" required placeholder="Tambah matlamat strategik baru..." class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shrink-0">
+                                + Tambah
+                            </button>
+                        </form>
+
+                        <div class="space-y-2.5 pt-2">
+                            ${state.orgGoals.map(g => `
+                                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    <span class="text-[10px] font-bold text-indigo-600 uppercase">${g.cycle}</span>
+                                    <p class="text-xs font-bold text-slate-900 mt-0.5">${g.title}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // I. LOG AUDIT (SUPER ADMIN)
+        function renderAuditView() {
+            return `
+                <div class="fade-in bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-heading font-bold text-slate-900">Rekod Jejak Audit (Firebase Audit Trail)</h3>
+                            <p class="text-xs text-slate-500">Memastikan ketelusan tadbir urus dan keselamatan perubahan data sistem.</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">${state.auditLogs.length} Rekod</span>
+                    </div>
+                    <div class="divide-y divide-slate-100">
+                        ${state.auditLogs.map(l => `
+                            <div class="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-2 h-2 rounded-full bg-indigo-600 mt-1.5 shrink-0"></div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-900">${l.actor}</p>
+                                        <p class="text-xs text-slate-600 mt-0.5">${l.action}</p>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-medium text-slate-400 shrink-0">${l.time}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // 7. PENGENDALI BORANG & TINDAKAN INTERAKTIF (CRUD FIREBASE)
+        // =========================================================================
+        window.openNewOutcomeModal = function() {
+            const user = getCurrentUser();
+            const sel = document.getElementById('out-org-goal');
+            sel.innerHTML = state.orgGoals.map(g => `<option value="${g.goalId}">${g.title}</option>`).join('');
+            document.getElementById('out-dept').value = user.department;
+            openModal('modal-new-outcome');
+        };
+
+        window.handleCreateOutcome = async function(e) {
+            e.preventDefault();
+            const user = getCurrentUser();
+            const outcomeId = 'out_' + Date.now();
+            const title = document.getElementById('out-title').value.trim();
+            const baseline = parseFloat(document.getElementById('out-baseline').value) || 0;
+            const target = parseFloat(document.getElementById('out-target').value) || 100;
+
+            const newOutcome = {
+                outcomeId,
+                userId: user.uid,
+                department: document.getElementById('out-dept').value.trim(),
+                alignedOrgGoalId: document.getElementById('out-org-goal').value,
+                title,
+                baselineValue: baseline,
+                currentValue: baseline,
+                targetValue: target,
+                isLowerBetter: target < baseline,
+                unit: document.getElementById('out-unit').value.trim(),
+                weightage: parseInt(document.getElementById('out-weight').value) || 30,
+                approvalStatus: activeRole === 'user' ? 'pending' : 'approved',
+                qualityRating: 4.2
+            };
+
+            await dbSet('outcomes', outcomeId, newOutcome);
+            await recordAuditLog(`Mencipta sasaran baru: "${title}"`);
+            closeModal('modal-new-outcome');
+            e.target.reset();
+            showToast("Sasaran hasil berjaya disimpan ke Firebase!", "success");
+        };
+
+        window.openCheckInModal = function(outcomeId) {
+            const o = state.outcomes.find(x => x.outcomeId === outcomeId);
+            if (!o) return;
+            document.getElementById('chk-outcome-id').value = o.outcomeId;
+            document.getElementById('chk-outcome-title').textContent = o.title;
+            document.getElementById('chk-current-disp').textContent = `${o.currentValue} / ${o.targetValue} ${o.unit}`;
+            document.getElementById('chk-new-value').value = o.currentValue;
+            openModal('modal-checkin');
+        };
+
+        window.handleCreateCheckIn = async function(e) {
+            e.preventDefault();
+            const outcomeId = document.getElementById('chk-outcome-id').value;
+            const o = state.outcomes.find(x => x.outcomeId === outcomeId);
+            if (!o) return;
+
+            const user = getCurrentUser();
+            const newValue = parseFloat(document.getElementById('chk-new-value').value);
+            const accomplishmentNote = document.getElementById('chk-accomplishment').value.trim();
+            const blockerNote = document.getElementById('chk-blocker').value.trim();
+            const evidenceUrl = document.getElementById('chk-evidence').value.trim();
+
+            const checkinId = 'chk_' + Date.now();
+            await dbSet('check_ins', checkinId, {
+                checkinId,
+                outcomeId,
+                userId: user.uid,
+                userName: user.name,
+                outcomeTitle: o.title,
+                newValue,
+                unit: o.unit,
+                accomplishmentNote,
+                blockerNote,
+                evidenceUrl,
+                verified: true,
+                timestamp: 'Baru sebentar'
+            });
+
+            // Kemas kini nilai semasa pada dokumen outcome
+            await dbSet('outcomes', outcomeId, { currentValue: newValue });
+            await recordAuditLog(`Log Check-In & bukti hasil untuk "${o.title}" (${newValue} ${o.unit})`);
+
+            closeModal('modal-checkin');
+            e.target.reset();
+            showToast("Check-In & bukti kerja berjaya dikemas kini!", "success");
+        };
+
+        window.openVerifyModal = function(outcomeId) {
+            const o = state.outcomes.find(x => x.outcomeId === outcomeId);
+            if (!o) return;
+            const owner = state.users.find(u => u.uid === o.userId)?.name || 'Staf';
+            document.getElementById('verify-outcome-id').value = o.outcomeId;
+            document.getElementById('verify-outcome-title').textContent = o.title;
+            document.getElementById('verify-outcome-owner').textContent = `Pemilik: ${owner} (${o.department})`;
+            document.getElementById('verify-status').value = o.approvalStatus === 'pending' ? 'approved' : o.approvalStatus;
+            document.getElementById('verify-quality').value = o.qualityRating || 4.5;
+            document.getElementById('verify-w2-hint').textContent = state.settings.w2 + '%';
+            openModal('modal-verify-outcome');
+        };
+
+        window.handleAdminVerifyOutcome = async function(e) {
+            e.preventDefault();
+            const outcomeId = document.getElementById('verify-outcome-id').value;
+            const o = state.outcomes.find(x => x.outcomeId === outcomeId);
+            const status = document.getElementById('verify-status').value;
+            const quality = parseFloat(document.getElementById('verify-quality').value);
+
+            await dbSet('outcomes', outcomeId, {
+                approvalStatus: status,
+                qualityRating: quality
+            });
+            await recordAuditLog(`Mengesahkan sasaran "${o?.title}" (Status: ${status}, Kualiti: ${quality}/5.0)`);
+            closeModal('modal-verify-outcome');
+            showToast("Status kelulusan & skor kualiti telah dikemas kini!", "success");
+        };
+
+        window.handleSendRecognition = async function(e) {
+            e.preventDefault();
+            const fromUser = getCurrentUser();
+            const toUserId = document.getElementById('rec-to-user').value;
+            const toUser = state.users.find(u => u.uid === toUserId);
+            const badge = document.getElementById('rec-badge').value;
+            const message = document.getElementById('rec-message').value.trim();
+
+            const recId = 'rec_' + Date.now();
+            await dbSet('recognitions', recId, {
+                recId,
+                fromName: fromUser.name,
+                toUserId,
+                toName: toUser?.name || 'Rakan Sekerja',
+                badge,
+                message
+            });
+            await recordAuditLog(`Menghantar lencana "${badge}" kepada ${toUser?.name}`);
+            e.target.reset();
+            showToast(`Lencana ${badge} dihantar kepada ${toUser?.name}!`, "success");
+        };
+
+        window.handleAddNewUser = async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-user-name').value.trim();
+            const email = document.getElementById('new-user-email').value.trim();
+            const department = document.getElementById('new-user-dept').value.trim();
+            const role = document.getElementById('new-user-role').value;
+            const uid = 'usr_' + Date.now();
+
+            await dbSet('users', uid, {
+                uid, name, email, department, role, collaborationScore: 85
+            });
+            await recordAuditLog(`Mendaftarkan pengguna baru: ${name} sebagai ${role}`);
+            e.target.reset();
+            showToast(`Pengguna ${name} berjaya didaftarkan!`, "success");
+        };
+
+        window.handleChangeUserRole = async function(uid, newRole) {
+            const targetUser = state.users.find(u => u.uid === uid);
+            await dbSet('users', uid, { role: newRole });
+            await recordAuditLog(`Menukar peranan ${targetUser?.name} kepada ${newRole}`);
+            showToast(`Peranan ${targetUser?.name} dikemas kini ke ${newRole}`, "success");
+        };
+
+        window.handleSaveSystemSettings = async function(e) {
+            e.preventDefault();
+            const w1 = parseInt(document.getElementById('set-w1').value);
+            const w2 = parseInt(document.getElementById('set-w2').value);
+            const w3 = parseInt(document.getElementById('set-w3').value);
+
+            if (w1 + w2 + w3 !== 100) {
+                showToast(`Jumlah pemberat mestilah 100% (Semasa: ${w1 + w2 + w3}%)`, "error");
+                return;
+            }
+            const cycle = document.getElementById('set-cycle').value.trim();
+            await dbSet('settings', 'global_config', { cycle, w1, w2, w3 });
+            await recordAuditLog(`Mengemas kini formula global: Hasil ${w1}%, Kualiti ${w2}%, Kolaborasi ${w3}%`);
+            showToast("Formula pemarkahan & tetapan sistem berjaya disimpan!", "success");
+        };
+
+        window.handleAddOrgGoal = async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-org-goal-title').value.trim();
+            const goalId = 'org_' + Date.now();
+            const user = getCurrentUser();
+            await dbSet('org_goals', goalId, {
+                goalId, title, cycle: state.settings.cycle, owner: user.name
+            });
+            await recordAuditLog(`Menambah Matlamat Organisasi: "${title}"`);
+            e.target.reset();
+            showToast("Matlamat North Star baru ditambah!", "success");
+        };
+
+        // =========================================================================
+        // 8. UTILITI UI (MODAL, TOAST, FIREBASE CONFIG)
+        // =========================================================================
+        window.openModal = function(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        };
+
+        window.closeModal = function(id) {
+            const el = document.getElementById(id);
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        };
+
+        window.toggleMobileSidebar = function() {
+            const sb = document.getElementById('sidebar');
+            const bd = document.getElementById('sidebar-backdrop');
+            sb.classList.toggle('-translate-x-full');
+            bd.classList.toggle('hidden');
+        };
+
+        window.openFirebaseConfigModal = function() {
+            document.getElementById('custom-firebase-json').value = localStorage.getItem('outcomepulse_custom_fb_config') || '';
+            openModal('modal-firebase-config');
+        };
+
+        window.saveCustomFirebaseConfig = function() {
+            const val = document.getElementById('custom-firebase-json').value.trim();
+            if (!val) {
+                localStorage.removeItem('outcomepulse_custom_fb_config');
+                location.reload();
+                return;
+            }
+            try {
+                JSON.parse(val);
+                localStorage.setItem('outcomepulse_custom_fb_config', val);
+                showToast("Konfigurasi Firebase disimpan. Menyambung semula...", "success");
+                setTimeout(() => location.reload(), 800);
+            } catch (e) {
+                showToast("Format JSON tidak sah. Sila semak semula.", "error");
+            }
+        };
+
+        window.resetDemoData = function() {
+            localStorage.removeItem(APP_NAMESPACE + '_db');
+            state = JSON.parse(JSON.stringify(SEED_DATA));
+            saveLocalFallbackState();
+            closeModal('modal-firebase-config');
+            renderAll();
+            showToast("Data contoh telah ditetapkan semula!", "info");
+        };
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-slate-900 text-white border-emerald-500',
+                error: 'bg-rose-900 text-white border-rose-400',
+                info: 'bg-indigo-900 text-white border-indigo-400'
+            };
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border-l-4 text-xs font-medium flex items-center gap-2.5 fade-in ${colors[type] || colors.success}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // Mulakan aplikasi
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebaseSystem();
+        });
+    </script>
+</body>
+</html>
